@@ -29,6 +29,7 @@ backend/                    # Spring Boot application
     repository/             # JPA repositories
     model/                  # Entity classes
     dto/                    # Data transfer objects
+    exception/              # Business exceptions + global handler
     config/                 # Configuration classes
   src/main/resources/
     application.yml         # Base config
@@ -67,3 +68,32 @@ frontend/                   # Angular application
 ## API Proxy
 
 Frontend proxies `/api/*` to `http://localhost:8080` (see `frontend/proxy.conf.json`).
+
+## API
+
+Base path `/api`, JSON (UTF-8). Errors use RFC 7807 `ProblemDetail`:
+`{"status":400,"title":"...","detail":"...","instance":"/api/projects","errors":{"field":"message"}}`
+(`errors` only on validation failures).
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/health` | Service status |
+| GET | `/api/projects?keyword=&status=&page=0&size=10` | Paged list (soft-deleted excluded), sorted by `updatedAt` desc, plus `summary` totals over all matched rows |
+| GET | `/api/projects/{id}` | Detail |
+| POST | `/api/projects` | Create → 201 |
+| PUT | `/api/projects/{id}` | Full update |
+| DELETE | `/api/projects/{id}` | Soft delete (`deleted=true`) → 204 |
+
+Status codes: 400 validation / bad date range / bad enum, 404 not found (incl. soft-deleted), 409 duplicate `code`.
+
+`Project` fields: `code` (unique, `[A-Za-z0-9_-]{2,32}`), `name`, `description`, `status`
+(`PLANNING|IN_PROGRESS|ON_HOLD|COMPLETED|CANCELLED`), `priority` (`LOW|MEDIUM|HIGH`), `owner`,
+`startDate`, `endDate`, `progress` (0-100), `receivableAmount`, `payableAmount`, `receivedAmount`,
+`paidAmount`. Derived (not stored): `expectedProfit = 应收 - 应付`, `actualProfit = 实收 - 实付`.
+
+## Frontend notes
+
+- Zoneless (`provideZonelessChangeDetection`); drive view state with signals — plain property
+  mutations after async callbacks will not refresh the view.
+- ng-zorro providers live in `src/app/app.config.ts`: `provideNzI18n(zh_CN)`, `provideNzIcons([...])`,
+  and `provideNzNativeDateAdapter({ locale: 'zh-CN' })` (required by `nz-date-picker`).
