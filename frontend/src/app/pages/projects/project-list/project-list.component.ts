@@ -6,6 +6,7 @@ import { NzCardModule } from 'ng-zorro-antd/card';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzMessageService } from 'ng-zorro-antd/message';
+import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
 import { NzProgressModule } from 'ng-zorro-antd/progress';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzTableModule } from 'ng-zorro-antd/table';
@@ -20,6 +21,7 @@ import {
 } from '../../../models/project.model';
 import { describeProblem } from '../../../services/problem.util';
 import { ProjectService } from '../../../services/project.service';
+import { ProjectFormComponent } from '../project-form/project-form.component';
 
 const EMPTY_SUMMARY: ProjectSummary = {
   receivableAmount: 0,
@@ -40,10 +42,12 @@ const EMPTY_SUMMARY: ProjectSummary = {
     NzCardModule,
     NzIconModule,
     NzInputModule,
+    NzPopconfirmModule,
     NzProgressModule,
     NzSelectModule,
     NzTableModule,
-    NzTagModule
+    NzTagModule,
+    ProjectFormComponent
   ],
   templateUrl: './project-list.component.html',
   styleUrl: './project-list.component.less'
@@ -116,6 +120,20 @@ export class ProjectListComponent implements OnInit {
     this.pageSize = pageSize;
     this.pageIndex = 1;
     this.load();
+  }
+
+  /** 软删除项目；删除后若当前页已空则回退一页。 */
+  remove(project: Project): void {
+    this.projectService.remove(project.id).subscribe({
+      next: () => {
+        this.message.success(`已删除「${project.name}」`);
+        if (this.projects().length === 1 && this.pageIndex > 1) {
+          this.pageIndex -= 1;
+        }
+        this.load();
+      },
+      error: (error: unknown) => this.message.error(describeProblem(error))
+    });
   }
 
   statusLabel(status: ProjectStatus): string {
