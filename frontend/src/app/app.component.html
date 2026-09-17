@@ -1,0 +1,16 @@
+<header class="app-header">
+  <span class="app-brand">{{ title }}</span>
+
+  <nav class="app-nav">
+    <a routerLink="/projects" routerLinkActive="app-nav-link--active">项目列表</a>
+    <a routerLink="/api-docs" routerLinkActive="app-nav-link--active">接口文档</a>
+  </nav>
+
+  <span class="app-header-right">
+    <app-health-indicator />
+  </span>
+</header>
+
+<main class="app-main">
+  <router-outlet />
+</main>

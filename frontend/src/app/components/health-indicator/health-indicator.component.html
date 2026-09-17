@@ -1,0 +1,8 @@
+<span
+  class="health-dot"
+  [class.health-dot--up]="status() === 'up'"
+  [class.health-dot--down]="status() === 'down'"
+  nz-tooltip
+  [nzTooltipTitle]="tooltip()"
+  [nzTooltipPlacement]="'bottomRight'"
+></span>

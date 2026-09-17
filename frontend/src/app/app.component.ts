@@ -1,12 +1,14 @@
 import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { HealthIndicatorComponent } from './components/health-indicator/health-indicator.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet],
-  template: `<router-outlet />`
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, HealthIndicatorComponent],
+  templateUrl: './app.component.html',
+  styleUrl: './app.component.less'
 })
 export class AppComponent {
-  title = 'kanban-frontend';
+  title = '项目看板';
 }

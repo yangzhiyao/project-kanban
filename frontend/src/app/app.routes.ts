@@ -8,6 +8,10 @@ export const routes: Routes = [
       import('./pages/projects/project-list/project-list.component').then((m) => m.ProjectListComponent)
   },
   {
+    path: 'api-docs',
+    loadComponent: () => import('./pages/api-docs/api-docs.component').then((m) => m.ApiDocsComponent)
+  },
+  {
     path: 'health',
     loadComponent: () => import('./pages/home/home.component').then((m) => m.HomeComponent)
   },
