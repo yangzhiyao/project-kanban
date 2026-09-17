@@ -1,0 +1,13 @@
+<nz-card nzTitle="项目看板">
+  <nz-spin [nzSpinning]="loading()">
+    @if (error(); as message) {
+      <nz-alert nzType="error" nzMessage="后端连接失败" [nzDescription]="message" />
+    } @else if (health(); as result) {
+      <nz-alert
+        nzType="success"
+        [nzMessage]="'后端服务：' + result.status"
+        [nzDescription]="'应用：' + result.application + ' · ' + result.timestamp"
+      />
+    }
+  </nz-spin>
+</nz-card>
