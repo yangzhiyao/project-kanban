@@ -1,8 +1,11 @@
 package com.kanban.project.service;
 
 import com.kanban.project.dto.ProjectPageResponse;
+import com.kanban.project.dto.ProjectRequest;
 import com.kanban.project.dto.ProjectResponse;
 import com.kanban.project.dto.ProjectSummary;
+import com.kanban.project.exception.DuplicateCodeException;
+import com.kanban.project.exception.InvalidRequestException;
 import com.kanban.project.exception.NotFoundException;
 import com.kanban.project.model.Project;
 import com.kanban.project.model.ProjectStatus;
@@ -13,6 +16,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
 @Service
@@ -45,9 +50,61 @@ public class ProjectService {
         return toResponse(findActive(id));
     }
 
+    @Transactional
+    public ProjectResponse create(ProjectRequest request) {
+        String code = normalizeCode(request.code());
+        if (repository.existsByCodeAndDeletedFalse(code)) {
+            throw new DuplicateCodeException("项目编号已存在: " + code);
+        }
+
+        Project project = new Project();
+        apply(project, request, code);
+        return toResponse(repository.saveAndFlush(project));
+    }
+
+    @Transactional
+    public ProjectResponse update(Long id, ProjectRequest request) {
+        Project project = findActive(id);
+        String code = normalizeCode(request.code());
+        if (repository.existsByCodeAndDeletedFalseAndIdNot(code, id)) {
+            throw new DuplicateCodeException("项目编号已存在: " + code);
+        }
+
+        apply(project, request, code);
+        return toResponse(repository.saveAndFlush(project));
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        Project project = findActive(id);
+        project.setDeleted(true);
+        repository.save(project);
+    }
+
     private Project findActive(Long id) {
         return repository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new NotFoundException("项目不存在: " + id));
+    }
+
+    private static void apply(Project project, ProjectRequest request, String code) {
+        if (request.startDate() != null && request.endDate() != null
+                && request.endDate().isBefore(request.startDate())) {
+            throw new InvalidRequestException("结束日期不能早于开始日期");
+        }
+
+        project.setCode(code);
+        project.setName(request.name().trim());
+        project.setDescription(trimToNull(request.description()));
+        project.setStatus(request.status());
+        project.setPriority(request.priority());
+        project.setOwner(trimToNull(request.owner()));
+        project.setStartDate(request.startDate());
+        project.setEndDate(request.endDate());
+        project.setProgress(request.progress() == null ? 0 : request.progress());
+        project.setReceivableAmount(money(request.receivableAmount()));
+        project.setPayableAmount(money(request.payableAmount()));
+        project.setReceivedAmount(money(request.receivedAmount()));
+        project.setPaidAmount(money(request.paidAmount()));
     }
 
     private static ProjectResponse toResponse(Project project) {
@@ -72,7 +129,23 @@ public class ProjectService {
                 project.getUpdatedAt());
     }
 
+    private static BigDecimal money(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value.setScale(2, RoundingMode.HALF_UP);
+    }
+
     private static String normalize(String keyword) {
         return keyword == null || keyword.isBlank() ? null : keyword.trim();
+    }
+
+    private static String normalizeCode(String code) {
+        return code == null ? null : code.trim();
+    }
+
+    private static String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }
