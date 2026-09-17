@@ -3,6 +3,12 @@
   [class.health-dot--up]="status() === 'up'"
   [class.health-dot--down]="status() === 'down'"
   nz-tooltip
-  [nzTooltipTitle]="tooltip()"
+  [nzTooltipTitle]="tip"
   [nzTooltipPlacement]="'bottomRight'"
+  (click)="refresh()"
 ></span>
+
+<ng-template #tip>
+  <div>{{ tooltip() }}</div>
+  <div class="tip-hint">点击可立即重新检测</div>
+</ng-template>
