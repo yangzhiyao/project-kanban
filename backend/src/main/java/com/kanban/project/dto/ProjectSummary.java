@@ -1,6 +1,7 @@
 package com.kanban.project.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
 
@@ -19,10 +20,10 @@ import java.math.BigDecimal;
  * @param paidAmount       实付合计
  */
 public record ProjectSummary(
-        BigDecimal receivableAmount,
-        BigDecimal payableAmount,
-        BigDecimal receivedAmount,
-        BigDecimal paidAmount) {
+        @Schema(description = "应收合计", example = "9700000.00") BigDecimal receivableAmount,
+        @Schema(description = "应付合计", example = "5860000.00") BigDecimal payableAmount,
+        @Schema(description = "实收合计", example = "4400000.00") BigDecimal receivedAmount,
+        @Schema(description = "实付合计", example = "2640000.00") BigDecimal paidAmount) {
 
     public ProjectSummary {
         receivableAmount = zeroIfNull(receivableAmount);
@@ -36,12 +37,14 @@ public record ProjectSummary(
     }
 
     /** 预计利润 = 应收合计 - 应付合计。 */
+    @Schema(description = "预计利润（派生）= 应收合计 - 应付合计", example = "3840000.00")
     @JsonProperty("expectedProfit")
     public BigDecimal expectedProfit() {
         return receivableAmount.subtract(payableAmount);
     }
 
     /** 实际利润 = 实收合计 - 实付合计。 */
+    @Schema(description = "实际利润（派生）= 实收合计 - 实付合计", example = "1760000.00")
     @JsonProperty("actualProfit")
     public BigDecimal actualProfit() {
         return receivedAmount.subtract(paidAmount);

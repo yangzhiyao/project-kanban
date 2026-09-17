@@ -3,3 +3,8 @@ spring:
     name: kanban-project
   profiles:
     active: dev
+
+springdoc:
+  api-docs:
+    path: /api/openapi
+    enabled: true

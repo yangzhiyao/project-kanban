@@ -2,6 +2,7 @@ package com.kanban.project.dto;
 
 import com.kanban.project.model.ProjectPriority;
 import com.kanban.project.model.ProjectStatus;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Max;
@@ -36,46 +37,59 @@ import java.time.LocalDate;
  * @param paidAmount       实付金额，可选，非负，最多 13 位整数 + 2 位小数
  */
 public record ProjectRequest(
+        @Schema(description = "项目编号，全局唯一，仅字母/数字/-/_", example = "PRJ-0009", maxLength = 32, minLength = 2)
         @NotBlank(message = "项目编号不能为空")
         @Pattern(regexp = "[A-Za-z0-9_-]{2,32}", message = "项目编号只能包含字母、数字、- 和 _，长度 2-32")
         String code,
 
+        @Schema(description = "项目名称", example = "新项目", maxLength = 100)
         @NotBlank(message = "项目名称不能为空")
         @Size(max = 100, message = "项目名称长度不能超过 100")
         String name,
 
+        @Schema(description = "项目描述", example = "项目描述", maxLength = 1000, nullable = true)
         @Size(max = 1000, message = "项目描述长度不能超过 1000")
         String description,
 
+        @Schema(description = "项目状态", example = "PLANNING")
         @NotNull(message = "项目状态不能为空")
         ProjectStatus status,
 
+        @Schema(description = "优先级", example = "MEDIUM")
         @NotNull(message = "优先级不能为空")
         ProjectPriority priority,
 
+        @Schema(description = "负责人", example = "张三", maxLength = 50, nullable = true)
         @Size(max = 50, message = "负责人长度不能超过 50")
         String owner,
 
+        @Schema(description = "计划开始日期，yyyy-MM-dd", example = "2026-05-01", nullable = true)
         LocalDate startDate,
 
+        @Schema(description = "计划结束日期，不得早于开始日期", example = "2026-10-31", nullable = true)
         LocalDate endDate,
 
+        @Schema(description = "进度百分比 0-100，缺省 0", example = "0", minimum = "0", maximum = "100", nullable = true)
         @Min(value = 0, message = "进度不能小于 0")
         @Max(value = 100, message = "进度不能大于 100")
         Integer progress,
 
+        @Schema(description = "应收金额，非负，最多 2 位小数", example = "100000.00", nullable = true)
         @DecimalMin(value = "0", message = "应收金额不能为负数")
         @Digits(integer = 13, fraction = 2, message = "应收金额最多 13 位整数、2 位小数")
         BigDecimal receivableAmount,
 
+        @Schema(description = "应付金额，非负，最多 2 位小数", example = "60000.00", nullable = true)
         @DecimalMin(value = "0", message = "应付金额不能为负数")
         @Digits(integer = 13, fraction = 2, message = "应付金额最多 13 位整数、2 位小数")
         BigDecimal payableAmount,
 
+        @Schema(description = "实收金额，非负，最多 2 位小数", example = "0.00", nullable = true)
         @DecimalMin(value = "0", message = "实收金额不能为负数")
         @Digits(integer = 13, fraction = 2, message = "实收金额最多 13 位整数、2 位小数")
         BigDecimal receivedAmount,
 
+        @Schema(description = "实付金额，非负，最多 2 位小数", example = "0.00", nullable = true)
         @DecimalMin(value = "0", message = "实付金额不能为负数")
         @Digits(integer = 13, fraction = 2, message = "实付金额最多 13 位整数、2 位小数")
         BigDecimal paidAmount) {

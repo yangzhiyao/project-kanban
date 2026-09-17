@@ -1,140 +1,121 @@
-<nz-card nzTitle="后端接口文档">
-  <div class="overview">
-    <div class="overview-item"><span class="label">Base URL</span><code>/api</code></div>
-    <div class="overview-item"><span class="label">数据格式</span><code>application/json (UTF-8)</code></div>
-    <div class="overview-item">
-      <span class="label">错误格式</span><code>RFC 7807 ProblemDetail</code>
-    </div>
-  </div>
-  <p class="hint">
-    错误统一返回 <code>ProblemDetail</code>，其中 <code>errors</code> 仅在字段校验失败（400）时出现，
-    键为字段名、值为错误提示。
-  </p>
-  <pre class="code">{{ problemExample }}</pre>
-</nz-card>
+<nz-spin [nzSpinning]="loading()">
+  @if (error(); as message) {
+    <nz-alert
+      nzType="error"
+      nzMessage="接口文档加载失败"
+      [nzDescription]="message"
+      nzShowIcon
+    >
+      <button nz-button nzType="primary" nzSize="small" (click)="load()">重试</button>
+    </nz-alert>
+  } @else if (info(); as doc) {
+    <nz-card [nzTitle]="doc.title">
+      <div class="overview">
+        @if (doc.version) {
+          <div class="overview-item"><span class="label">Version</span><code>{{ doc.version }}</code></div>
+        }
+        <div class="overview-item"><span class="label">Base URL</span><code>{{ baseUrl }}</code></div>
+        <div class="overview-item"><span class="label">OpenAPI</span><code>{{ specVersion() }}</code></div>
+        <div class="overview-item">
+          <span class="label">规范来源</span><code>springdoc /api/openapi</code>
+        </div>
+      </div>
+      @if (doc.description) {
+        <pre class="info-desc">{{ doc.description }}</pre>
+      }
+    </nz-card>
 
-@for (group of groups; track group.tag) {
-  <nz-card class="group" [nzTitle]="group.tag">
-    <p class="group-desc">{{ group.description }}</p>
+    @for (group of groups(); track group.tag) {
+      <nz-card class="group" [nzTitle]="group.tag">
+        @if (group.description) {
+          <p class="group-desc">{{ group.description }}</p>
+        }
 
-    @for (endpoint of group.endpoints; track endpoint.method + endpoint.path) {
-      <div class="endpoint" [class.endpoint--open]="isExpanded(endpoint.method, endpoint.path)">
-        <button
-          type="button"
-          class="endpoint-head"
-          (click)="toggle(endpoint.method, endpoint.path)"
-        >
-          <span class="method" [class]="'method--' + endpoint.method.toLowerCase()">
-            {{ endpoint.method }}
-          </span>
-          <span class="path">{{ endpoint.path }}</span>
-          <span class="summary">{{ endpoint.summary }}</span>
-          <nz-icon
-            class="chevron"
-            [nzType]="isExpanded(endpoint.method, endpoint.path) ? 'down' : 'right'"
-          />
-        </button>
+        @for (endpoint of group.endpoints; track endpoint.method + endpoint.path) {
+          <div class="endpoint" [class.endpoint--open]="isExpanded(endpoint.method, endpoint.path)">
+            <button
+              type="button"
+              class="endpoint-head"
+              (click)="toggle(endpoint.method, endpoint.path)"
+            >
+              <span class="method" [class]="'method--' + endpoint.method.toLowerCase()">
+                {{ endpoint.method }}
+              </span>
+              <span class="path">{{ endpoint.path }}</span>
+              <span class="summary">{{ endpoint.summary }}</span>
+              <nz-icon
+                class="chevron"
+                [nzType]="isExpanded(endpoint.method, endpoint.path) ? 'down' : 'right'"
+              />
+            </button>
 
-        @if (isExpanded(endpoint.method, endpoint.path)) {
-          <div class="endpoint-body">
-            @if (endpoint.description) {
-              <p class="desc">{{ endpoint.description }}</p>
-            }
+            @if (isExpanded(endpoint.method, endpoint.path)) {
+              <div class="endpoint-body">
+                @if (endpoint.description) {
+                  <p class="desc">{{ endpoint.description }}</p>
+                }
 
-            @if (endpoint.pathParams?.length) {
-              <div class="section-title">路径参数</div>
-              <table class="fields">
-                <thead>
-                  <tr>
-                    <th>名称</th>
-                    <th>类型</th>
-                    <th>必填</th>
-                    <th>说明</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (field of endpoint.pathParams; track field.name) {
-                    <tr>
-                      <td><code>{{ field.name }}</code></td>
-                      <td>{{ field.type }}</td>
-                      <td>{{ field.required ? '是' : '否' }}</td>
-                      <td>{{ field.description }}</td>
-                    </tr>
+                @for (section of [
+                  { title: '路径参数', fields: endpoint.pathParams },
+                  { title: '查询参数', fields: endpoint.queryParams },
+                  { title: '请求体字段', fields: endpoint.bodyFields }
+                ]; track section.title) {
+                  @if (section.fields.length) {
+                    <div class="section-title">{{ section.title }}</div>
+                    <table class="fields">
+                      <thead>
+                        <tr>
+                          <th>名称</th>
+                          <th>类型</th>
+                          <th>必填</th>
+                          <th>说明</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (field of section.fields; track field.name) {
+                          <tr>
+                            <td><code>{{ field.name }}</code></td>
+                            <td>{{ field.type }}</td>
+                            <td>{{ field.required ? '是' : '否' }}</td>
+                            <td>{{ field.description }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
                   }
-                </tbody>
-              </table>
+                }
+
+                @if (endpoint.requestExample) {
+                  <div class="section-title">请求示例</div>
+                  <pre class="code">{{ endpoint.requestExample }}</pre>
+                }
+
+                @if (endpoint.responseExample) {
+                  <div class="section-title">响应示例</div>
+                  <pre class="code">{{ endpoint.responseExample }}</pre>
+                } @else {
+                  <div class="section-title">响应</div>
+                  <p class="desc">该接口无响应体。</p>
+                }
+
+                @if (endpoint.responses.length) {
+                  <div class="section-title">状态码</div>
+                  <ul class="statuses">
+                    @for (response of endpoint.responses; track response.status) {
+                      <li>
+                        <span class="status" [class.status--ok]="response.status.startsWith('2')">
+                          {{ response.status }}
+                        </span>
+                        {{ response.description }}
+                      </li>
+                    }
+                  </ul>
+                }
+              </div>
             }
-
-            @if (endpoint.queryParams?.length) {
-              <div class="section-title">查询参数</div>
-              <table class="fields">
-                <thead>
-                  <tr>
-                    <th>名称</th>
-                    <th>类型</th>
-                    <th>必填</th>
-                    <th>说明</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (field of endpoint.queryParams; track field.name) {
-                    <tr>
-                      <td><code>{{ field.name }}</code></td>
-                      <td>{{ field.type }}</td>
-                      <td>{{ field.required ? '是' : '否' }}</td>
-                      <td>{{ field.description }}</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            }
-
-            @if (endpoint.bodyFields?.length) {
-              <div class="section-title">请求体字段</div>
-              <table class="fields">
-                <thead>
-                  <tr>
-                    <th>名称</th>
-                    <th>类型</th>
-                    <th>必填</th>
-                    <th>说明</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (field of endpoint.bodyFields; track field.name) {
-                    <tr>
-                      <td><code>{{ field.name }}</code></td>
-                      <td>{{ field.type }}</td>
-                      <td>{{ field.required ? '是' : '否' }}</td>
-                      <td>{{ field.description }}</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            }
-
-            @if (endpoint.requestExample) {
-              <div class="section-title">请求示例</div>
-              <pre class="code">{{ endpoint.requestExample }}</pre>
-            }
-
-            <div class="section-title">响应示例</div>
-            <pre class="code">{{ endpoint.responseExample }}</pre>
-
-            <div class="section-title">状态码</div>
-            <ul class="statuses">
-              @for (response of endpoint.responses; track response.status) {
-                <li>
-                  <span class="status" [class.status--ok]="response.status.startsWith('2')">
-                    {{ response.status }}
-                  </span>
-                  {{ response.description }}
-                </li>
-              }
-            </ul>
           </div>
         }
-      </div>
+      </nz-card>
     }
-  </nz-card>
-}
+  }
+</nz-spin>
