@@ -1,0 +1,105 @@
+<nz-card nzTitle="项目列表">
+  <div class="toolbar">
+    <input
+      nz-input
+      class="toolbar-search"
+      placeholder="项目编号 / 名称"
+      [(ngModel)]="keyword"
+      (keyup.enter)="search()"
+    />
+
+    <nz-select
+      class="toolbar-status"
+      nzPlaceHolder="全部状态"
+      nzAllowClear
+      [(ngModel)]="status"
+      (ngModelChange)="search()"
+    >
+      @for (option of statusOptions; track option.value) {
+        <nz-option [nzValue]="option.value" [nzLabel]="option.label" />
+      }
+    </nz-select>
+
+    <button nz-button nzType="primary" (click)="search()">
+      <nz-icon nzType="search" />
+      查询
+    </button>
+    <button nz-button (click)="reset()">
+      <nz-icon nzType="reload" />
+      重置
+    </button>
+  </div>
+
+  <nz-table
+    #table
+    [nzData]="projects()"
+    [nzLoading]="loading()"
+    [nzFrontPagination]="false"
+    [nzTotal]="total()"
+    [nzPageIndex]="pageIndex"
+    [nzPageSize]="pageSize"
+    [nzPageSizeOptions]="[10, 20, 50]"
+    nzShowSizeChanger
+    nzSize="middle"
+    [nzScroll]="{ x: '1500px' }"
+    (nzPageIndexChange)="onPageIndexChange($event)"
+    (nzPageSizeChange)="onPageSizeChange($event)"
+  >
+    <thead>
+      <tr>
+        <th nzWidth="120px">项目编号</th>
+        <th nzWidth="200px">项目名称</th>
+        <th nzWidth="100px">状态</th>
+        <th nzWidth="90px">优先级</th>
+        <th nzWidth="100px">负责人</th>
+        <th nzWidth="140px">进度</th>
+        <th nzWidth="200px">计划周期</th>
+        <th nzWidth="130px" nzAlign="right">应收</th>
+        <th nzWidth="130px" nzAlign="right">应付</th>
+        <th nzWidth="130px" nzAlign="right">实收</th>
+        <th nzWidth="130px" nzAlign="right">实付</th>
+        <th nzWidth="130px" nzAlign="right">预计利润</th>
+        <th nzWidth="130px" nzAlign="right">实际利润</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of table.data; track row.id) {
+        <tr>
+          <td>{{ row.code }}</td>
+          <td>{{ row.name }}</td>
+          <td>
+            <nz-tag [nzColor]="statusColor(row.status)">{{ statusLabel(row.status) }}</nz-tag>
+          </td>
+          <td>
+            <nz-tag [nzColor]="priorityColor(row.priority)">{{ priorityLabel(row.priority) }}</nz-tag>
+          </td>
+          <td>{{ row.owner || '-' }}</td>
+          <td>
+            <nz-progress
+              [nzPercent]="row.progress"
+              nzSize="small"
+              [nzShowInfo]="true"
+            />
+          </td>
+          <td>{{ row.startDate || '-' }} ~ {{ row.endDate || '-' }}</td>
+          <td nzAlign="right">{{ row.receivableAmount | number: '1.2-2' }}</td>
+          <td nzAlign="right">{{ row.payableAmount | number: '1.2-2' }}</td>
+          <td nzAlign="right">{{ row.receivedAmount | number: '1.2-2' }}</td>
+          <td nzAlign="right">{{ row.paidAmount | number: '1.2-2' }}</td>
+          <td nzAlign="right" class="profit">{{ row.expectedProfit | number: '1.2-2' }}</td>
+          <td nzAlign="right" class="profit">{{ row.actualProfit | number: '1.2-2' }}</td>
+        </tr>
+      }
+    </tbody>
+  </nz-table>
+
+  <div class="summary">
+    <span class="summary-title">合计（当前筛选条件）</span>
+    <span class="summary-item">应收 <b>{{ summary().receivableAmount | number: '1.2-2' }}</b></span>
+    <span class="summary-item">应付 <b>{{ summary().payableAmount | number: '1.2-2' }}</b></span>
+    <span class="summary-item">实收 <b>{{ summary().receivedAmount | number: '1.2-2' }}</b></span>
+    <span class="summary-item">实付 <b>{{ summary().paidAmount | number: '1.2-2' }}</b></span>
+    <span class="summary-item">预计利润 <b>{{ summary().expectedProfit | number: '1.2-2' }}</b></span>
+    <span class="summary-item">实际利润 <b>{{ summary().actualProfit | number: '1.2-2' }}</b></span>
+  </div>
+</nz-card>
