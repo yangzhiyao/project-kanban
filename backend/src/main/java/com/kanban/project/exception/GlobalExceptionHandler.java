@@ -12,6 +12,20 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * 全局异常处理，把业务/框架异常统一转换成 RFC 7807 {@link ProblemDetail}。
+ *
+ * <p>响应体结构：{@code {"status":400,"title":"...","detail":"...","instance":"/api/projects","errors":{...}}}，
+ * 其中 {@code errors} 仅在字段校验失败时出现，键为字段名、值为错误提示。
+ *
+ * <p>映射关系：
+ * <ul>
+ *   <li>{@link NotFoundException} -&gt; 404</li>
+ *   <li>{@link DuplicateCodeException}、{@link DataIntegrityViolationException} -&gt; 409</li>
+ *   <li>{@link InvalidRequestException}、{@link MethodArgumentNotValidException}、
+ *       {@link MethodArgumentTypeMismatchException}、{@link HttpMessageNotReadableException} -&gt; 400</li>
+ * </ul>
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 

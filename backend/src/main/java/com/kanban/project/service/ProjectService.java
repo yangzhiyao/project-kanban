@@ -20,6 +20,12 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 
+/**
+ * 项目业务逻辑。
+ *
+ * <p>职责：DTO 与实体互转、编号唯一性校验、金额归一化（{@code null} 视为 0，保留 2 位小数）、
+ * 跨字段日期校验以及软删除。类级为只读事务，写方法单独标注 {@link Transactional}。
+ */
 @Service
 @Transactional(readOnly = true)
 public class ProjectService {
@@ -32,6 +38,15 @@ public class ProjectService {
         this.repository = repository;
     }
 
+    /**
+     * 分页查询项目，并按相同条件统计金额合计。
+     *
+     * @param keyword 可选，忽略大小写模糊匹配编号或名称
+     * @param status  可选，按状态精确过滤
+     * @param page    页码，从 0 开始，负数按 0 处理
+     * @param size    每页条数，自动收敛到 1..{@value #MAX_PAGE_SIZE}
+     * @return 分页数据与合计；固定按更新时间倒序
+     */
     public ProjectPageResponse list(String keyword, ProjectStatus status, int page, int size) {
         String normalizedKeyword = normalize(keyword);
         PageRequest pageRequest = PageRequest.of(
@@ -46,10 +61,21 @@ public class ProjectService {
         return new ProjectPageResponse(items, result.getTotalElements(), result.getNumber(), result.getSize(), summary);
     }
 
+    /**
+     * 查询未删除的项目详情。
+     *
+     * @throws NotFoundException 项目不存在或已删除
+     */
     public ProjectResponse get(Long id) {
         return toResponse(findActive(id));
     }
 
+    /**
+     * 新建项目。
+     *
+     * @throws DuplicateCodeException 编号已被占用
+     * @throws InvalidRequestException 日期区间不合法
+     */
     @Transactional
     public ProjectResponse create(ProjectRequest request) {
         String code = normalizeCode(request.code());
@@ -62,6 +88,15 @@ public class ProjectService {
         return toResponse(repository.saveAndFlush(project));
     }
 
+    /**
+     * 全量更新项目（未提交的可选字段按默认值覆盖）。
+     *
+     * <p>使用 {@code saveAndFlush} 立即写库，确保返回体中的 {@code updatedAt} 已刷新。
+     *
+     * @throws NotFoundException 项目不存在或已删除
+     * @throws DuplicateCodeException 编号被其他项目占用
+     * @throws InvalidRequestException 日期区间不合法
+     */
     @Transactional
     public ProjectResponse update(Long id, ProjectRequest request) {
         Project project = findActive(id);
@@ -74,6 +109,11 @@ public class ProjectService {
         return toResponse(repository.saveAndFlush(project));
     }
 
+    /**
+     * 软删除项目（置 {@code deleted = true}，数据保留）。重复删除返回 404。
+     *
+     * @throws NotFoundException 项目不存在或已删除
+     */
     @Transactional
     public void delete(Long id) {
         Project project = findActive(id);

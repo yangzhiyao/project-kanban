@@ -11,14 +11,29 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
+/**
+ * 项目数据访问层。
+ *
+ * <p>所有对外查询都会排除软删除记录（{@code deleted = true}）。
+ */
 public interface ProjectRepository extends JpaRepository<Project, Long> {
 
+    /** 按主键查询未删除的项目。 */
     Optional<Project> findByIdAndDeletedFalse(Long id);
 
+    /** 判断未删除的项目中是否已存在该编号。 */
     boolean existsByCodeAndDeletedFalse(String code);
 
+    /** 判断除指定主键外，是否已存在该编号的未删除项目（更新时排除自身）。 */
     boolean existsByCodeAndDeletedFalseAndIdNot(String code, Long id);
 
+    /**
+     * 按关键字与状态分页查询，按更新时间倒序由调用方通过 {@link Pageable} 指定。
+     *
+     * @param keyword 为 {@code null} 时不参与过滤；否则忽略大小写模糊匹配项目编号或名称
+     * @param status  为 {@code null} 时不参与过滤
+     * @param pageable 分页与排序参数
+     */
     @Query("""
             select p from Project p
             where p.deleted = false
@@ -31,6 +46,13 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
                          @Param("status") ProjectStatus status,
                          Pageable pageable);
 
+    /**
+     * 统计与 {@link #search} 相同筛选条件下的金额合计。
+     *
+     * @param keyword 同 {@link #search}
+     * @param status  同 {@link #search}
+     * @return 应收/应付/实收/实付合计，无数据时为 0
+     */
     @Query("""
             select new com.kanban.project.dto.ProjectSummary(
                 sum(p.receivableAmount),

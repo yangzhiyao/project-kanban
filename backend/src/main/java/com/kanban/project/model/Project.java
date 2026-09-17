@@ -16,6 +16,15 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 
+/**
+ * 项目实体。
+ *
+ * <p>金额字段统一使用 {@link BigDecimal}，数据库类型为 {@code DECIMAL(15,2)}，单位按元处理。
+ * 利润不落库，由应收/应付/实收/实付派生，见 {@link com.kanban.project.dto.ProjectResponse}。
+ *
+ * <p>删除是软删除：{@code deleted = true} 后不再对接口可见，但数据保留。
+ * {@code createdAt}/{@code updatedAt} 由 JPA 生命周期回调自动维护（UTC）。
+ */
 @Entity
 @Table(name = "project", uniqueConstraints = @UniqueConstraint(name = "uk_project_code", columnNames = "code"))
 public class Project {
@@ -53,18 +62,23 @@ public class Project {
     @Column(nullable = false)
     private Integer progress = 0;
 
+    /** 应收金额 */
     @Column(name = "receivable_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal receivableAmount = BigDecimal.ZERO;
 
+    /** 应付金额 */
     @Column(name = "payable_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal payableAmount = BigDecimal.ZERO;
 
+    /** 实收金额 */
     @Column(name = "received_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal receivedAmount = BigDecimal.ZERO;
 
+    /** 实付金额 */
     @Column(name = "paid_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal paidAmount = BigDecimal.ZERO;
 
+    /** 软删除标记，{@code true} 表示已删除 */
     @Column(nullable = false)
     private boolean deleted = false;
 
